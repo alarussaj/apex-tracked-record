@@ -24,7 +24,7 @@ public inherited sharing class DefaultFieldComparator implements IFieldComparato
 		if (a == null || b == null) return false;
 		// Decimal: compare by value, ignoring scale (1.0 == 1.00)
 		if (a instanceof Decimal && b instanceof Decimal) {
-			return ((Decimal) a).compareTo((Decimal) b) == 0;
+			return ((Decimal) a) - ((Decimal) b) == 0;
 		}
 		return a == b;
 	}
