@@ -1,0 +1,23 @@
+# Files and folders that should not be deployed to a Salesforce org.
+
+# ── Documentation and project metadata ────────────────────────
+*.md
+LICENSE
+.github/
+.gitignore
+.forceignore
+.prettierignore
+.prettierrc
+package.json
+package-lock.json
+ruleset.xml
+codecov.yml
+sfdx-project.json
+config/
+
+# ── Node ──────────────────────────────────────────────────────
+node_modules/
+
+# ── Test infrastructure ───────────────────────────────────────
+coverage/
+test-results/

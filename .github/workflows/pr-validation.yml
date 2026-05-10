@@ -1,0 +1,151 @@
+name: PR Validation
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+  pull-requests: write
+  checks: write
+
+jobs:
+  prettier:
+    name: Prettier formatting
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run Prettier check
+        run: npm run format:check
+
+  pmd:
+    name: PMD static analysis
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+
+      - name: Install PMD
+        run: |
+          PMD_VERSION=7.7.0
+          wget -q https://github.com/pmd/pmd/releases/download/pmd_releases%2F${PMD_VERSION}/pmd-dist-${PMD_VERSION}-bin.zip
+          unzip -q pmd-dist-${PMD_VERSION}-bin.zip
+          echo "$PWD/pmd-bin-${PMD_VERSION}/bin" >> $GITHUB_PATH
+
+      - name: Run PMD
+        run: |
+          pmd check \
+            --dir force-app \
+            --rulesets ruleset.xml \
+            --format sarif \
+            --report-file pmd-report.sarif \
+            --no-fail-on-violation \
+            --no-fail-on-error
+        continue-on-error: false
+
+      - name: Upload PMD SARIF
+        if: always()
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: pmd-report.sarif
+          category: pmd
+
+      - name: Fail on PMD violations
+        run: |
+          pmd check \
+            --dir force-app \
+            --rulesets ruleset.xml \
+            --format text
+
+  scratch-org-tests:
+    name: Scratch org deploy + Apex tests
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install Salesforce CLI
+        run: npm install -g @salesforce/cli@latest
+
+      - name: Verify CLI
+        run: sf --version
+
+      - name: Authenticate to Dev Hub
+        env:
+          SF_DEVHUB_AUTH_URL: ${{ secrets.SF_DEVHUB_AUTH_URL }}
+        run: |
+          if [ -z "$SF_DEVHUB_AUTH_URL" ]; then
+            echo "ERROR: SF_DEVHUB_AUTH_URL secret is not set."
+            echo "See CONTRIBUTING.md for setup instructions."
+            exit 1
+          fi
+          echo "$SF_DEVHUB_AUTH_URL" > /tmp/devhub-auth.txt
+          sf org login sfdx-url --sfdx-url-file /tmp/devhub-auth.txt --alias DevHub --set-default-dev-hub
+          rm /tmp/devhub-auth.txt
+
+      - name: Create scratch org
+        run: |
+          sf org create scratch \
+            --definition-file config/project-scratch-def.json \
+            --alias atr-ci \
+            --set-default \
+            --duration-days 1 \
+            --no-namespace
+
+      - name: Deploy source
+        run: sf project deploy start --target-org atr-ci
+
+      - name: Run Apex tests with coverage
+        run: |
+          sf apex run test \
+            --target-org atr-ci \
+            --code-coverage \
+            --result-format json \
+            --output-dir test-results \
+            --wait 10 \
+            --test-level RunLocalTests
+
+      - name: Upload coverage to Codecov
+        if: always()
+        uses: codecov/codecov-action@v4
+        with:
+          files: ./test-results/test-result-codecoverage.json
+          flags: apex
+          fail_ci_if_error: false
+        env:
+          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
+
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-results
+          path: test-results/
+
+      - name: Delete scratch org
+        if: always()
+        run: sf org delete scratch --target-org atr-ci --no-prompt

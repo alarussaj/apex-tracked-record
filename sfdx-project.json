@@ -1,0 +1,18 @@
+{
+	"packageDirectories": [
+		{
+			"path": "force-app",
+			"default": true,
+			"package": "apex-tracked-record",
+			"versionName": "Version 0.1.0",
+			"versionNumber": "0.1.0.NEXT"
+		}
+	],
+	"name": "apex-tracked-record",
+	"namespace": "",
+	"sfdcLoginUrl": "https://login.salesforce.com",
+	"sourceApiVersion": "64.0",
+	"packageAliases": {
+		"apex-tracked-record": "0Hoxxxxxxxxxxxxxxx"
+	}
+}

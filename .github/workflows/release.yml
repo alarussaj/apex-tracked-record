@@ -1,0 +1,110 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*.*.*'
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    name: Create unlocked package version & GitHub release
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install Salesforce CLI
+        run: npm install -g @salesforce/cli@latest
+
+      - name: Authenticate to Dev Hub
+        env:
+          SF_DEVHUB_AUTH_URL: ${{ secrets.SF_DEVHUB_AUTH_URL }}
+        run: |
+          if [ -z "$SF_DEVHUB_AUTH_URL" ]; then
+            echo "ERROR: SF_DEVHUB_AUTH_URL secret is not set."
+            exit 1
+          fi
+          echo "$SF_DEVHUB_AUTH_URL" > /tmp/devhub-auth.txt
+          sf org login sfdx-url --sfdx-url-file /tmp/devhub-auth.txt --alias DevHub --set-default-dev-hub
+          rm /tmp/devhub-auth.txt
+
+      - name: Extract version from tag
+        id: version
+        run: |
+          # Strip the leading 'v' from the tag (v0.1.0 -> 0.1.0)
+          VERSION="${GITHUB_REF#refs/tags/v}"
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          echo "Releasing version: $VERSION"
+
+      - name: Create package version
+        id: package
+        run: |
+          set -e
+          OUTPUT=$(sf package version create \
+            --package apex-tracked-record \
+            --installation-key-bypass \
+            --wait 30 \
+            --code-coverage \
+            --json)
+          echo "$OUTPUT" | jq .
+          PACKAGE_VERSION_ID=$(echo "$OUTPUT" | jq -r '.result.SubscriberPackageVersionId')
+          echo "package_version_id=$PACKAGE_VERSION_ID" >> $GITHUB_OUTPUT
+          echo "Package Version Id: $PACKAGE_VERSION_ID"
+
+      - name: Promote package version
+        run: |
+          sf package version promote \
+            --package "${{ steps.package.outputs.package_version_id }}" \
+            --no-prompt
+
+      - name: Generate release notes
+        id: release_notes
+        uses: release-drafter/release-drafter@v6
+        with:
+          version: ${{ steps.version.outputs.version }}
+          tag: ${{ github.ref_name }}
+          publish: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Create GitHub release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ github.ref_name }}
+          name: ${{ github.ref_name }}
+          body: |
+            ${{ steps.release_notes.outputs.body }}
+
+            ---
+
+            ### Install URL
+
+            **Production / Developer Edition:**
+            ```
+            https://login.salesforce.com/packaging/installPackage.apexp?p0=${{ steps.package.outputs.package_version_id }}
+            ```
+
+            **Sandbox:**
+            ```
+            https://test.salesforce.com/packaging/installPackage.apexp?p0=${{ steps.package.outputs.package_version_id }}
+            ```
+
+            ### SFDX Install
+
+            ```bash
+            sf package install --package ${{ steps.package.outputs.package_version_id }} --target-org <your-org-alias> --wait 10
+            ```
+          draft: false
+          prerelease: ${{ startsWith(steps.version.outputs.version, '0.') }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
