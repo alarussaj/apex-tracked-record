@@ -28,7 +28,10 @@ private class TrackedRecord_Test {
 			TrackedRecord.wrap(null);
 		} catch (TrackedRecordException e) {
 			threw = true;
-			Assert.isTrue(e.getMessage().contains('record must not be null'), 'Failure message should explain that record cannot be null');
+			Assert.isTrue(
+				e.getMessage().contains('record must not be null'),
+				'Failure message should explain that record cannot be null'
+			);
 		}
 		// Assert
 		Assert.isTrue(threw, 'wrap(null) should throw TrackedRecordException');
@@ -49,7 +52,10 @@ private class TrackedRecord_Test {
 			TrackedRecord.wrap(accountWithoutId);
 		} catch (TrackedRecordException e) {
 			threw = true;
-			Assert.isTrue(e.getMessage().contains('record.Id must not be null'), 'Failure message should explain that the record must have an Id');
+			Assert.isTrue(
+				e.getMessage().contains('record.Id must not be null'),
+				'Failure message should explain that the record must have an Id'
+			);
 		}
 		// Assert
 		Assert.isTrue(threw, 'wrap() should throw TrackedRecordException when record.Id is null');
@@ -99,8 +105,16 @@ private class TrackedRecord_Test {
 		List<TrackedRecord> result = TrackedRecord.wrapAll(new List<SObject>{ first, second });
 		// Assert
 		Assert.areEqual(2, result.size(), 'Result should contain both wrapped records');
-		Assert.areEqual('First', ((Account) result[0].getRecord()).Name, 'First wrapped record should match first input');
-		Assert.areEqual('Second', ((Account) result[1].getRecord()).Name, 'Second wrapped record should match second input');
+		Assert.areEqual(
+			'First',
+			((Account) result[0].getRecord()).Name,
+			'First wrapped record should match first input'
+		);
+		Assert.areEqual(
+			'Second',
+			((Account) result[1].getRecord()).Name,
+			'Second wrapped record should match second input'
+		);
 	}
 
 	/**
@@ -219,7 +233,11 @@ private class TrackedRecord_Test {
 		tracked.setIfChanged(Account.Industry, 'Technology');
 		// Assert
 		Assert.isTrue(tracked.isFieldDirty(Account.Industry), 'Field should remain dirty');
-		Assert.areEqual('Healthcare', tracked.getChangedValues().get(Account.Industry), 'setIfChanged should not overwrite earlier set() because comparison uses the original');
+		Assert.areEqual(
+			'Healthcare',
+			tracked.getChangedValues().get(Account.Industry),
+			'setIfChanged should not overwrite earlier set() because comparison uses the original'
+		);
 	}
 
 	/**
@@ -405,7 +423,10 @@ private class TrackedRecord_Test {
 		Assert.isTrue(populated.containsKey('Id'), 'Populated fields should include Id');
 		Assert.isTrue(populated.containsKey('Industry'), 'Populated fields should include the dirty Industry field');
 		Assert.isFalse(populated.containsKey('Name'), 'Populated fields should not include Name (untracked)');
-		Assert.isFalse(populated.containsKey('NumberOfEmployees'), 'Populated fields should not include NumberOfEmployees (untracked)');
+		Assert.isFalse(
+			populated.containsKey('NumberOfEmployees'),
+			'Populated fields should not include NumberOfEmployees (untracked)'
+		);
 	}
 
 	/**
@@ -485,7 +506,10 @@ private class TrackedRecord_Test {
 		tracked.withComparator(null);
 		tracked.setIfChanged(Account.Description, 'FOO');
 		// Assert
-		Assert.isTrue(tracked.isDirty(), 'After resetting to default comparator, foo and FOO should be treated as different');
+		Assert.isTrue(
+			tracked.isDirty(),
+			'After resetting to default comparator, foo and FOO should be treated as different'
+		);
 	}
 
 	/**
@@ -523,7 +547,10 @@ private class TrackedRecord_Test {
 	static void shouldCompareValuesUsingStandardEqualityWhenDefaultComparatorReceivesNonDecimals() {
 		// Act / Assert
 		Assert.isTrue(DefaultFieldComparator.INSTANCE.areEqual('foo', 'foo'), 'Equal Strings should compare equal');
-		Assert.isFalse(DefaultFieldComparator.INSTANCE.areEqual('foo', 'bar'), 'Different Strings should compare unequal');
+		Assert.isFalse(
+			DefaultFieldComparator.INSTANCE.areEqual('foo', 'bar'),
+			'Different Strings should compare unequal'
+		);
 		Assert.isTrue(DefaultFieldComparator.INSTANCE.areEqual(true, true), 'Equal Booleans should compare equal');
 	}
 

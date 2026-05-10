@@ -205,7 +205,8 @@ public inherited sharing class TrackedRecord {
 	 * @return List of SObject ready for bulk DML.
 	 */
 	public static List<SObject> toDmlRecords(List<TrackedRecord> tracked) {
-		if (tracked == null) return new List<SObject>();
+		if (tracked == null)
+			return new List<SObject>();
 		List<SObject> result = new List<SObject>();
 		for (TrackedRecord trackedRecord : tracked) {
 			if (trackedRecord != null && trackedRecord.isDirty()) {
@@ -234,6 +235,7 @@ public inherited sharing class TrackedRecord {
 	 * @throws TrackedRecordException if field is null.
 	 */
 	private void validateField(SObjectField field) {
-		if (field == null) throw new TrackedRecordException('field must not be null.');
+		if (field == null)
+			throw new TrackedRecordException('field must not be null.');
 	}
 }
