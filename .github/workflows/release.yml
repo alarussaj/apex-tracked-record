@@ -86,7 +86,9 @@ jobs:
             exit "$SF_EXIT_CODE"
           fi
 
-          # Try to extract the package version Id; fall back to raw output if jq fails
+          # Extract the package version Id. The raw stdout/stderr were already
+          # printed above for diagnostics, so we only need to surface jq's own
+          # error here if parsing fails.
           if PACKAGE_VERSION_ID=$(jq -r '.result.SubscriberPackageVersionId // empty' /tmp/sf-stdout.json 2>/tmp/jq-stderr.log); then
             if [ -z "$PACKAGE_VERSION_ID" ]; then
               echo "::error::sf succeeded but no SubscriberPackageVersionId in output"
