@@ -1,34 +1,40 @@
 {
-	"name": "apex-tracked-record",
-	"version": "0.1.0",
-	"description": "Apex DML that only writes the fields you actually changed.",
-	"author": "Andrew J La Russa",
-	"license": "MIT",
-	"private": true,
-	"repository": {
-		"type": "git",
-		"url": "git+https://github.com/alarussaj/apex-tracked-record.git"
-	},
-	"bugs": {
-		"url": "https://github.com/alarussaj/apex-tracked-record/issues"
-	},
-	"homepage": "https://github.com/alarussaj/apex-tracked-record#readme",
-	"keywords": [
-		"salesforce",
-		"apex",
-		"sfdc",
-		"dml",
-		"change-tracking"
-	],
-	"scripts": {
-		"format": "prettier --write \"**/*.{cls,trigger,apex,js,json,md,yml,yaml}\"",
-		"format:check": "prettier --check \"**/*.{cls,trigger,apex,js,json,md,yml,yaml}\""
-	},
-	"devDependencies": {
-		"prettier": "^3.3.0",
-		"prettier-plugin-apex": "^2.1.0"
-	},
-	"engines": {
-		"node": ">=18.0.0"
-	}
+  "name": "apex-tracked-record",
+  "version": "0.1.0",
+  "description": "Apex DML that only writes the fields you actually changed.",
+  "author": "Andrew J La Russa",
+  "license": "MIT",
+  "private": true,
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/alarussaj/apex-tracked-record.git"
+  },
+  "bugs": {
+    "url": "https://github.com/alarussaj/apex-tracked-record/issues"
+  },
+  "homepage": "https://github.com/alarussaj/apex-tracked-record#readme",
+  "keywords": [
+    "salesforce",
+    "apex",
+    "sfdc",
+    "dml",
+    "change-tracking"
+  ],
+  "scripts": {
+    "format": "prettier --write \"**/*.{cls,trigger,apex,js,json,md,yml,yaml}\"",
+    "format:check": "prettier --check \"**/*.{cls,trigger,apex,js,json,md,yml,yaml}\"",
+    "prepare": "husky"
+  },
+  "devDependencies": {
+    "husky": "^9.1.7",
+    "lint-staged": "^17.0.4",
+    "prettier": "^3.3.0",
+    "prettier-plugin-apex": "^2.1.0"
+  },
+  "lint-staged": {
+    "*.{cls,trigger,apex,js,json,md,yml,yaml}": "prettier --write"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
 }

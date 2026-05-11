@@ -29,12 +29,14 @@ jobs:
       - name: Authenticate to Dev Hub
         env:
           SF_DEVHUB_AUTH_URL: ${{ secrets.SF_DEVHUB_AUTH_URL }}
+        shell: bash
         run: |
+          set -e
           if [ -z "$SF_DEVHUB_AUTH_URL" ]; then
-            echo "ERROR: SF_DEVHUB_AUTH_URL secret is not set."
+            echo "::error::SF_DEVHUB_AUTH_URL secret is not set. See CONTRIBUTING.md for setup."
             exit 1
           fi
-          echo "$SF_DEVHUB_AUTH_URL" > /tmp/devhub-auth.txt
+          printf '%s' "$SF_DEVHUB_AUTH_URL" > /tmp/devhub-auth.txt
           sf org login sfdx-url --sfdx-url-file /tmp/devhub-auth.txt --alias DevHub --set-default-dev-hub
           rm /tmp/devhub-auth.txt
 

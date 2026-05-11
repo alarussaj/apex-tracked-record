@@ -16,7 +16,7 @@ This prevents the field clobbering and trigger amplification that occur when Ape
 
 ## Why TrackedRecord?
 
-When you update an SObject in Apex, DML writes *every populated field* on the record — even fields you never intended to change. This silently:
+When you update an SObject in Apex, DML writes _every populated field_ on the record — even fields you never intended to change. This silently:
 
 - Overwrites concurrent edits made by other users.
 - Amplifies trigger execution (every workflow, validation rule, and trigger evaluating field changes sees changes that didn't logically happen).
@@ -168,26 +168,28 @@ TrackedRecord tracked = TrackedRecord.wrap(existing).withComparator(new DomainAw
 
 ## API Reference
 
-| Method | Description |
-|---|---|
-| `wrap(SObject)` | Wraps a record. Throws if record is null or has a null Id. |
-| `wrapAll(List<SObject>)` | Wraps a list of records. |
-| `set(field, value)` | Tracks a field as dirty (always). |
-| `setIfChanged(field, value)` | Tracks only if value differs from original. |
-| `clear(field)` | Removes a tracked change for a field. |
-| `reset()` | Removes all tracked changes. |
-| `getRecord()` | Returns the original wrapped SObject. |
-| `getOriginal(field)` | Returns the pre-change value of a field. |
-| `isDirty()` | True if any field is tracked as changed. |
-| `isFieldDirty(field)` | True if the given field is tracked as changed. |
-| `getDirtyFields()` | Set of dirty fields (defensive copy). |
-| `getDirtyFieldList()` | List of dirty fields (for fflib integration). |
-| `getChangedValues()` | Map of dirty field → new value (defensive copy). |
-| `toDmlRecord()` | SObject with Id + dirty fields only. |
-| `toDmlRecords(List<TrackedRecord>)` | Static. List of DML records, filtered to dirty only. |
-| `withComparator(IFieldComparator)` | Customize equality for `setIfChanged()`. |
+| Method                              | Description                                                |
+| ----------------------------------- | ---------------------------------------------------------- |
+| `wrap(SObject)`                     | Wraps a record. Throws if record is null or has a null Id. |
+| `wrapAll(List<SObject>)`            | Wraps a list of records.                                   |
+| `set(field, value)`                 | Tracks a field as dirty (always).                          |
+| `setIfChanged(field, value)`        | Tracks only if value differs from original.                |
+| `clear(field)`                      | Removes a tracked change for a field.                      |
+| `reset()`                           | Removes all tracked changes.                               |
+| `getRecord()`                       | Returns the original wrapped SObject.                      |
+| `getOriginal(field)`                | Returns the pre-change value of a field.                   |
+| `isDirty()`                         | True if any field is tracked as changed.                   |
+| `isFieldDirty(field)`               | True if the given field is tracked as changed.             |
+| `getDirtyFields()`                  | Set of dirty fields (defensive copy).                      |
+| `getDirtyFieldList()`               | List of dirty fields (for fflib integration).              |
+| `getChangedValues()`                | Map of dirty field → new value (defensive copy).           |
+| `toDmlRecord()`                     | SObject with Id + dirty fields only.                       |
+| `toDmlRecords(List<TrackedRecord>)` | Static. List of DML records, filtered to dirty only.       |
+| `withComparator(IFieldComparator)`  | Customize equality for `setIfChanged()`.                   |
 
-See [TDD documentation](docs/) for detailed behavioral semantics and edge cases.
+```
+See the [Getting Started guide](docs/getting-started.md) for a hands-on walkthrough,
+and the [examples](docs/examples/) for real-world patterns.
 
 ---
 
@@ -227,3 +229,7 @@ MIT — see [LICENSE](LICENSE) for the full text.
 ## Author
 
 Created and maintained by [Andrew J La Russa](https://github.com/alarussaj).
+
+ 
+ 
+```

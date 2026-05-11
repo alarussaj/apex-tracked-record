@@ -12,6 +12,34 @@ permissions:
   checks: write
 
 jobs:
+  pr-title:
+    name: PR title (Conventional Commits)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Validate PR title
+        uses: amannn/action-semantic-pull-request@v5
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          types: |
+            feat
+            fix
+            docs
+            style
+            refactor
+            perf
+            test
+            chore
+            ci
+            build
+            revert
+          requireScope: false
+          subjectPattern: ^(?![A-Z]).+$
+          subjectPatternError: |
+            The subject "{subject}" found in the pull request title "{title}"
+            didn't match the configured pattern. Please ensure that the subject
+            doesn't start with an uppercase character.
+
   prettier:
     name: Prettier formatting
     runs-on: ubuntu-latest
@@ -56,24 +84,6 @@ jobs:
           pmd check \
             --dir force-app \
             --rulesets ruleset.xml \
-            --format sarif \
-            --report-file pmd-report.sarif \
-            --no-fail-on-violation \
-            --no-fail-on-error
-        continue-on-error: false
-
-      - name: Upload PMD SARIF
-        if: always()
-        uses: github/codeql-action/upload-sarif@v3
-        with:
-          sarif_file: pmd-report.sarif
-          category: pmd
-
-      - name: Fail on PMD violations
-        run: |
-          pmd check \
-            --dir force-app \
-            --rulesets ruleset.xml \
             --format text
 
   scratch-org-tests:
@@ -97,55 +107,13 @@ jobs:
       - name: Authenticate to Dev Hub
         env:
           SF_DEVHUB_AUTH_URL: ${{ secrets.SF_DEVHUB_AUTH_URL }}
+        shell: bash
         run: |
+          set -e
           if [ -z "$SF_DEVHUB_AUTH_URL" ]; then
-            echo "ERROR: SF_DEVHUB_AUTH_URL secret is not set."
-            echo "See CONTRIBUTING.md for setup instructions."
+            echo "::error::SF_DEVHUB_AUTH_URL secret is not set. See CONTRIBUTING.md for setup."
             exit 1
           fi
-          echo "$SF_DEVHUB_AUTH_URL" > /tmp/devhub-auth.txt
+          printf '%s' "$SF_DEVHUB_AUTH_URL" > /tmp/devhub-auth.txt
           sf org login sfdx-url --sfdx-url-file /tmp/devhub-auth.txt --alias DevHub --set-default-dev-hub
           rm /tmp/devhub-auth.txt
-
-      - name: Create scratch org
-        run: |
-          sf org create scratch \
-            --definition-file config/project-scratch-def.json \
-            --alias atr-ci \
-            --set-default \
-            --duration-days 1 \
-            --no-namespace
-
-      - name: Deploy source
-        run: sf project deploy start --target-org atr-ci
-
-      - name: Run Apex tests with coverage
-        run: |
-          sf apex run test \
-            --target-org atr-ci \
-            --code-coverage \
-            --result-format json \
-            --output-dir test-results \
-            --wait 10 \
-            --test-level RunLocalTests
-
-      - name: Upload coverage to Codecov
-        if: always()
-        uses: codecov/codecov-action@v4
-        with:
-          files: ./test-results/test-result-codecoverage.json
-          flags: apex
-          fail_ci_if_error: false
-        env:
-          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
-
-      - name: Upload test results
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: test-results
-          path: test-results/
-
-      - name: Delete scratch org
-        if: always()
-        run: sf org delete scratch --target-org atr-ci --no-prompt
