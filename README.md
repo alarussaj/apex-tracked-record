@@ -187,7 +187,9 @@ TrackedRecord tracked = TrackedRecord.wrap(existing).withComparator(new DomainAw
 | `toDmlRecords(List<TrackedRecord>)` | Static. List of DML records, filtered to dirty only.       |
 | `withComparator(IFieldComparator)`  | Customize equality for `setIfChanged()`.                   |
 
-See [TDD documentation](docs/) for detailed behavioral semantics and edge cases.
+```
+See the [Getting Started guide](docs/getting-started.md) for a hands-on walkthrough,
+and the [examples](docs/examples/) for real-world patterns.
 
 ---
 
@@ -230,3 +232,4 @@ Created and maintained by [Andrew J La Russa](https://github.com/alarussaj).
 
  
  
+```
