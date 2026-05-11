@@ -51,22 +51,50 @@ jobs:
       - name: Create package version
         id: package
         run: |
-          set -e
+          set -eo pipefail
+
           echo "::group::Running sf package version create"
-          sf package version create \
+
+          # Capture stdout and stderr separately
+          if sf package version create \
             --package apex-tracked-record \
             --installation-key-bypass \
             --wait 30 \
             --code-coverage \
-            --json 2>&1 | tee /tmp/sf-output.json
+            --json > /tmp/sf-stdout.json 2> /tmp/sf-stderr.log; then
+            SF_EXIT_CODE=0
+          else
+            SF_EXIT_CODE=$?
+          fi
+
           echo "::endgroup::"
 
-          # Check if the command succeeded by looking for the package version Id
-          PACKAGE_VERSION_ID=$(jq -r '.result.SubscriberPackageVersionId // empty' /tmp/sf-output.json)
+          # Always print captured output for diagnostics
+          echo "::group::sf stdout"
+          cat /tmp/sf-stdout.json
+          echo "::endgroup::"
 
-          if [ -z "$PACKAGE_VERSION_ID" ]; then
-            echo "::error::Package version creation failed. Full output:"
-            cat /tmp/sf-output.json
+          if [ -s /tmp/sf-stderr.log ]; then
+            echo "::group::sf stderr"
+            cat /tmp/sf-stderr.log
+            echo "::endgroup::"
+          fi
+
+          # Fail if sf failed
+          if [ "$SF_EXIT_CODE" -ne 0 ]; then
+            echo "::error::sf package version create exited with code $SF_EXIT_CODE"
+            exit "$SF_EXIT_CODE"
+          fi
+
+          # Try to extract the package version Id; fall back to raw output if jq fails
+          if PACKAGE_VERSION_ID=$(jq -r '.result.SubscriberPackageVersionId // empty' /tmp/sf-stdout.json 2>/tmp/jq-stderr.log); then
+            if [ -z "$PACKAGE_VERSION_ID" ]; then
+              echo "::error::sf succeeded but no SubscriberPackageVersionId in output"
+              exit 1
+            fi
+          else
+            echo "::error::Failed to parse sf output as JSON. jq stderr:"
+            cat /tmp/jq-stderr.log
             exit 1
           fi
 
