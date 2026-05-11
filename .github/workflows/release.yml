@@ -52,16 +52,26 @@ jobs:
         id: package
         run: |
           set -e
-          OUTPUT=$(sf package version create \
+          echo "::group::Running sf package version create"
+          sf package version create \
             --package apex-tracked-record \
             --installation-key-bypass \
             --wait 30 \
             --code-coverage \
-            --json)
-          echo "$OUTPUT" | jq .
-          PACKAGE_VERSION_ID=$(echo "$OUTPUT" | jq -r '.result.SubscriberPackageVersionId')
+            --json 2>&1 | tee /tmp/sf-output.json
+          echo "::endgroup::"
+
+          # Check if the command succeeded by looking for the package version Id
+          PACKAGE_VERSION_ID=$(jq -r '.result.SubscriberPackageVersionId // empty' /tmp/sf-output.json)
+
+          if [ -z "$PACKAGE_VERSION_ID" ]; then
+            echo "::error::Package version creation failed. Full output:"
+            cat /tmp/sf-output.json
+            exit 1
+          fi
+
           echo "package_version_id=$PACKAGE_VERSION_ID" >> $GITHUB_OUTPUT
-          echo "Package Version Id: $PACKAGE_VERSION_ID"
+          echo "::notice::Package Version Id: $PACKAGE_VERSION_ID"
 
       - name: Promote package version
         run: |
