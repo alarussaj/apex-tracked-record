@@ -111,7 +111,7 @@ jobs:
 
       - name: Generate release notes
         id: release_notes
-        uses: release-drafter/release-drafter@v6
+        uses: release-drafter/release-drafter@v7
         with:
           version: ${{ steps.version.outputs.version }}
           tag: ${{ github.ref_name }}
