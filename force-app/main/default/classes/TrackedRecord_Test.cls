@@ -163,7 +163,7 @@ private class TrackedRecord_Test {
 		tracked.set(Account.Industry, null);
 		// Assert
 		Assert.isTrue(tracked.isFieldDirty(Account.Industry), 'set(null) should track the field for clearing');
-		Assert.areEqual(null, tracked.getChangedValues().get(Account.Industry), 'Changed value should be null');
+		Assert.areEqual(null, tracked.getChangedValue(Account.Industry), 'Changed value should be null');
 	}
 
 	/**
@@ -235,7 +235,7 @@ private class TrackedRecord_Test {
 		Assert.isTrue(tracked.isFieldDirty(Account.Industry), 'Field should remain dirty');
 		Assert.areEqual(
 			'Healthcare',
-			tracked.getChangedValues().get(Account.Industry),
+			tracked.getChangedValue(Account.Industry),
 			'setIfChanged should not overwrite earlier set() because comparison uses the original'
 		);
 	}
@@ -330,6 +330,55 @@ private class TrackedRecord_Test {
 		Object originalValue = tracked.getOriginal(Account.Industry);
 		// Assert
 		Assert.areEqual('Technology', originalValue, 'getOriginal() should return the pre-change value');
+	}
+
+	/**
+	 * @description Verifies getChangedValue() returns the tracked new value
+	 * for a dirty field, providing typed access without chained Map calls.
+	 */
+	@IsTest
+	static void shouldReturnTrackedValueWhenGetChangedValueIsCalled() {
+		// Arrange
+		Account account = buildAccount(1, 'Acme');
+		account.Industry = 'Technology';
+		TrackedRecord tracked = TrackedRecord.wrap(account);
+		tracked.set(Account.Industry, 'Healthcare');
+		// Act
+		Object changedValue = tracked.getChangedValue(Account.Industry);
+		// Assert
+		Assert.areEqual('Healthcare', changedValue, 'getChangedValue() should return the tracked new value');
+	}
+
+	/**
+	 * @description Verifies getChangedValue() returns null when the field
+	 * has not been tracked as changed.
+	 */
+	@IsTest
+	static void shouldReturnNullWhenGetChangedValueIsCalledForCleanField() {
+		// Arrange
+		TrackedRecord tracked = TrackedRecord.wrap(buildAccount(1, 'Acme'));
+		// Act
+		Object changedValue = tracked.getChangedValue(Account.Industry);
+		// Assert
+		Assert.areEqual(null, changedValue, 'getChangedValue() should return null for an untracked field');
+	}
+
+	/**
+	 * @description Verifies getChangedValue() throws when the field argument is null.
+	 */
+	@IsTest
+	static void shouldThrowWhenGetChangedValueReceivesNullField() {
+		// Arrange
+		TrackedRecord tracked = TrackedRecord.wrap(buildAccount(1, 'Acme'));
+		Boolean threw = false;
+		// Act
+		try {
+			tracked.getChangedValue(null);
+		} catch (TrackedRecordException e) {
+			threw = true;
+		}
+		// Assert
+		Assert.isTrue(threw, 'getChangedValue(null) should throw TrackedRecordException');
 	}
 
 	/**

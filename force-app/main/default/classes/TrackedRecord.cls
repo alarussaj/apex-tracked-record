@@ -138,6 +138,20 @@ public inherited sharing class TrackedRecord {
 	}
 
 	/**
+	 * @description Returns the tracked new value for a single field, or null
+	 * if the field has not been changed. Provides typed access to individual
+	 * tracked values without forcing consumers to chain through the full map
+	 * returned by getChangedValues().
+	 * @param field SObjectField whose tracked value is requested.
+	 * @return The tracked new value for the field, or null if not dirty.
+	 * @throws TrackedRecordException if field is null.
+	 */
+	public Object getChangedValue(SObjectField field) {
+		validateField(field);
+		return changes.get(field);
+	}
+
+	/**
 	 * @description Returns true if at least one field has been tracked as changed.
 	 * @return True when any change has been recorded.
 	 */
@@ -177,6 +191,9 @@ public inherited sharing class TrackedRecord {
 	 * @description Returns a defensive copy of the dirty field-to-value map.
 	 * Useful for higher-level frameworks that need to introspect changes
 	 * without reconstructing them from toDmlRecord().
+	 *
+	 * For per-field access, prefer getChangedValue(field) which avoids
+	 * chained Map access patterns that can trip Apex package compilation.
 	 * @return Map of SObjectField to the tracked new value.
 	 */
 	public Map<SObjectField, Object> getChangedValues() {

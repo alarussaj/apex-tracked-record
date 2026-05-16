@@ -13,7 +13,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
-## [0.1.0] - 2026-05-09
+## [0.1.0] - 2026-05-11
 
 Initial release.
 
@@ -24,7 +24,7 @@ Initial release.
 - `TrackedRecordException` — thrown on programmer-error inputs (null record, null Id, null field).
 - `wrap(SObject)`, `wrapAll(List<SObject>)` factory methods.
 - `set()`, `setIfChanged()`, `clear()`, `reset()` mutation API.
-- `getRecord()`, `getOriginal(field)` reading API.
+- `getRecord()`, `getOriginal(field)`, `getChangedValue(field)` reading API.
 - `isDirty()`, `isFieldDirty(field)`, `getDirtyFields()`, `getDirtyFieldList()`, `getChangedValues()` state inspection.
 - `toDmlRecord()`, `toDmlRecords(List<TrackedRecord>)` output for any UoW or direct DML.
 - `withComparator(IFieldComparator)` for pluggable equality rules.
