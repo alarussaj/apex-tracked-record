@@ -8,6 +8,9 @@
  * synthetic Ids derived from the SObject key prefix to avoid hardcoded
  * Id literals (PMD AvoidHardcodingId).
  *
+ * Local Account variables are named `acct` (not `account`) to avoid
+ * case-insensitive identifier collision with the Schema.Account namespace.
+ *
  * @group TrackedRecord
  * @see https://github.com/alarussaj/apex-tracked-record
  */
@@ -45,11 +48,11 @@ private class TrackedRecord_Test {
 	@IsTest
 	static void shouldThrowWhenWrapReceivesRecordWithoutId() {
 		// Arrange
-		Account accountWithoutId = new Account(Name = 'Acme');
+		Account acctWithoutId = new Account(Name = 'Acme');
 		Boolean threw = false;
 		// Act
 		try {
-			TrackedRecord.wrap(accountWithoutId);
+			TrackedRecord.wrap(acctWithoutId);
 		} catch (TrackedRecordException e) {
 			threw = true;
 			Assert.isTrue(
@@ -140,9 +143,9 @@ private class TrackedRecord_Test {
 	@IsTest
 	static void shouldMarkFieldDirtyWhenSetReceivesEqualValue() {
 		// Arrange
-		Account account = buildAccount(1, 'Acme');
-		account.Industry = 'Technology';
-		TrackedRecord tracked = TrackedRecord.wrap(account);
+		Account acct = buildAccount(1, 'Acme');
+		acct.Industry = 'Technology';
+		TrackedRecord tracked = TrackedRecord.wrap(acct);
 		// Act
 		tracked.set(Account.Industry, 'Technology');
 		// Assert
@@ -156,9 +159,9 @@ private class TrackedRecord_Test {
 	@IsTest
 	static void shouldTrackNullValueWhenSetReceivesNull() {
 		// Arrange
-		Account account = buildAccount(1, 'Acme');
-		account.Industry = 'Technology';
-		TrackedRecord tracked = TrackedRecord.wrap(account);
+		Account acct = buildAccount(1, 'Acme');
+		acct.Industry = 'Technology';
+		TrackedRecord tracked = TrackedRecord.wrap(acct);
 		// Act
 		tracked.set(Account.Industry, null);
 		// Assert
@@ -168,7 +171,8 @@ private class TrackedRecord_Test {
 
 	/**
 	 * @description Verifies set() throws TrackedRecordException when the
-	 * field argument is null.
+	 * field argument is null. The cast disambiguates the SObjectField overload
+	 * from the String overload introduced in 0.1.1.
 	 */
 	@IsTest
 	static void shouldThrowWhenSetReceivesNullField() {
@@ -177,7 +181,7 @@ private class TrackedRecord_Test {
 		Boolean threw = false;
 		// Act
 		try {
-			tracked.set(null, 'value');
+			tracked.set((SObjectField) null, 'value');
 		} catch (TrackedRecordException e) {
 			threw = true;
 		}
@@ -192,9 +196,9 @@ private class TrackedRecord_Test {
 	@IsTest
 	static void shouldSkipTrackingWhenSetIfChangedReceivesEqualValue() {
 		// Arrange
-		Account account = buildAccount(1, 'Acme');
-		account.Industry = 'Technology';
-		TrackedRecord tracked = TrackedRecord.wrap(account);
+		Account acct = buildAccount(1, 'Acme');
+		acct.Industry = 'Technology';
+		TrackedRecord tracked = TrackedRecord.wrap(acct);
 		// Act
 		tracked.setIfChanged(Account.Industry, 'Technology');
 		// Assert
@@ -208,9 +212,9 @@ private class TrackedRecord_Test {
 	@IsTest
 	static void shouldTrackChangeWhenSetIfChangedReceivesDifferentValue() {
 		// Arrange
-		Account account = buildAccount(1, 'Acme');
-		account.Industry = 'Technology';
-		TrackedRecord tracked = TrackedRecord.wrap(account);
+		Account acct = buildAccount(1, 'Acme');
+		acct.Industry = 'Technology';
+		TrackedRecord tracked = TrackedRecord.wrap(acct);
 		// Act
 		tracked.setIfChanged(Account.Industry, 'Healthcare');
 		// Assert
@@ -225,9 +229,9 @@ private class TrackedRecord_Test {
 	@IsTest
 	static void shouldCompareAgainstOriginalWhenSetIfChangedFollowsSet() {
 		// Arrange
-		Account account = buildAccount(1, 'Acme');
-		account.Industry = 'Technology';
-		TrackedRecord tracked = TrackedRecord.wrap(account);
+		Account acct = buildAccount(1, 'Acme');
+		acct.Industry = 'Technology';
+		TrackedRecord tracked = TrackedRecord.wrap(acct);
 		// Act
 		tracked.set(Account.Industry, 'Healthcare');
 		tracked.setIfChanged(Account.Industry, 'Technology');
@@ -307,12 +311,12 @@ private class TrackedRecord_Test {
 	@IsTest
 	static void shouldReturnOriginalSObjectWhenGetRecordIsCalled() {
 		// Arrange
-		Account account = buildAccount(1, 'Acme');
-		TrackedRecord tracked = TrackedRecord.wrap(account);
+		Account acct = buildAccount(1, 'Acme');
+		TrackedRecord tracked = TrackedRecord.wrap(acct);
 		// Act
 		SObject returned = tracked.getRecord();
 		// Assert
-		Assert.areEqual(account, returned, 'getRecord() should return the same SObject reference that was wrapped');
+		Assert.areEqual(acct, returned, 'getRecord() should return the same SObject reference that was wrapped');
 	}
 
 	/**
@@ -322,9 +326,9 @@ private class TrackedRecord_Test {
 	@IsTest
 	static void shouldReturnPreChangeValueWhenGetOriginalIsCalled() {
 		// Arrange
-		Account account = buildAccount(1, 'Acme');
-		account.Industry = 'Technology';
-		TrackedRecord tracked = TrackedRecord.wrap(account);
+		Account acct = buildAccount(1, 'Acme');
+		acct.Industry = 'Technology';
+		TrackedRecord tracked = TrackedRecord.wrap(acct);
 		tracked.set(Account.Industry, 'Healthcare');
 		// Act
 		Object originalValue = tracked.getOriginal(Account.Industry);
@@ -339,9 +343,9 @@ private class TrackedRecord_Test {
 	@IsTest
 	static void shouldReturnTrackedValueWhenGetChangedValueIsCalled() {
 		// Arrange
-		Account account = buildAccount(1, 'Acme');
-		account.Industry = 'Technology';
-		TrackedRecord tracked = TrackedRecord.wrap(account);
+		Account acct = buildAccount(1, 'Acme');
+		acct.Industry = 'Technology';
+		TrackedRecord tracked = TrackedRecord.wrap(acct);
 		tracked.set(Account.Industry, 'Healthcare');
 		// Act
 		Object changedValue = tracked.getChangedValue(Account.Industry);
@@ -364,7 +368,9 @@ private class TrackedRecord_Test {
 	}
 
 	/**
-	 * @description Verifies getChangedValue() throws when the field argument is null.
+	 * @description Verifies getChangedValue() throws when the field argument
+	 * is null. The cast disambiguates the SObjectField overload from the
+	 * String overload introduced in 0.1.1.
 	 */
 	@IsTest
 	static void shouldThrowWhenGetChangedValueReceivesNullField() {
@@ -373,7 +379,7 @@ private class TrackedRecord_Test {
 		Boolean threw = false;
 		// Act
 		try {
-			tracked.getChangedValue(null);
+			tracked.getChangedValue((SObjectField) null);
 		} catch (TrackedRecordException e) {
 			threw = true;
 		}
@@ -457,15 +463,15 @@ private class TrackedRecord_Test {
 	@IsTest
 	static void shouldReturnRecordWithIdAndDirtyFieldsWhenToDmlRecordIsCalled() {
 		// Arrange
-		Account account = buildAccount(1, 'Acme');
-		account.Industry = 'Technology';
-		account.NumberOfEmployees = 100;
-		TrackedRecord tracked = TrackedRecord.wrap(account);
+		Account acct = buildAccount(1, 'Acme');
+		acct.Industry = 'Technology';
+		acct.NumberOfEmployees = 100;
+		TrackedRecord tracked = TrackedRecord.wrap(acct);
 		tracked.set(Account.Industry, 'Healthcare');
 		// Act
 		Account dmlRecord = (Account) tracked.toDmlRecord();
 		// Assert
-		Assert.areEqual(account.Id, dmlRecord.Id, 'DML record should preserve the original Id');
+		Assert.areEqual(acct.Id, dmlRecord.Id, 'DML record should preserve the original Id');
 		Assert.areEqual('Healthcare', dmlRecord.Industry, 'DML record should contain the dirty Industry field');
 		Map<String, Object> populated = dmlRecord.getPopulatedFieldsAsMap();
 		Assert.areEqual(2, populated.size(), 'DML record should contain only Id and the one dirty field');
@@ -485,12 +491,12 @@ private class TrackedRecord_Test {
 	@IsTest
 	static void shouldReturnRecordWithOnlyIdWhenToDmlRecordIsCalledOnCleanWrapper() {
 		// Arrange
-		Account account = buildAccount(1, 'Acme');
-		TrackedRecord tracked = TrackedRecord.wrap(account);
+		Account acct = buildAccount(1, 'Acme');
+		TrackedRecord tracked = TrackedRecord.wrap(acct);
 		// Act
 		Account dmlRecord = (Account) tracked.toDmlRecord();
 		// Assert
-		Assert.areEqual(account.Id, dmlRecord.Id, 'DML record should preserve the Id');
+		Assert.areEqual(acct.Id, dmlRecord.Id, 'DML record should preserve the Id');
 		Assert.areEqual(1, dmlRecord.getPopulatedFieldsAsMap().size(), 'DML record should contain only the Id');
 	}
 
@@ -527,14 +533,15 @@ private class TrackedRecord_Test {
 
 	/**
 	 * @description Verifies withComparator() applies a custom equality rule
-	 * end-to-end through setIfChanged().
+	 * end-to-end through setIfChanged(). Uses the top-level
+	 * CaseInsensitiveComparator test class.
 	 */
 	@IsTest
 	static void shouldApplyCustomEqualityWhenWithComparatorIsCalled() {
 		// Arrange
-		Account account = buildAccount(1, 'Acme');
-		account.Description = 'foo';
-		TrackedRecord tracked = TrackedRecord.wrap(account).withComparator(new CaseInsensitiveComparator());
+		Account acct = buildAccount(1, 'Acme');
+		acct.Description = 'foo';
+		TrackedRecord tracked = TrackedRecord.wrap(acct).withComparator(new CaseInsensitiveComparator());
 		// Act
 		tracked.setIfChanged(Account.Description, 'FOO');
 		// Assert
@@ -548,9 +555,9 @@ private class TrackedRecord_Test {
 	@IsTest
 	static void shouldRestoreDefaultWhenWithComparatorReceivesNull() {
 		// Arrange
-		Account account = buildAccount(1, 'Acme');
-		account.Description = 'foo';
-		TrackedRecord tracked = TrackedRecord.wrap(account).withComparator(new CaseInsensitiveComparator());
+		Account acct = buildAccount(1, 'Acme');
+		acct.Description = 'foo';
+		TrackedRecord tracked = TrackedRecord.wrap(acct).withComparator(new CaseInsensitiveComparator());
 		// Act
 		tracked.withComparator(null);
 		tracked.setIfChanged(Account.Description, 'FOO');
@@ -604,7 +611,9 @@ private class TrackedRecord_Test {
 	}
 
 	/**
-	 * @description Verifies isFieldDirty() throws when the field argument is null.
+	 * @description Verifies isFieldDirty() throws when the field argument is
+	 * null. The cast disambiguates the SObjectField overload from the String
+	 * overload introduced in 0.1.1.
 	 */
 	@IsTest
 	static void shouldThrowWhenIsFieldDirtyReceivesNullField() {
@@ -613,7 +622,7 @@ private class TrackedRecord_Test {
 		Boolean threw = false;
 		// Act
 		try {
-			tracked.isFieldDirty(null);
+			tracked.isFieldDirty((SObjectField) null);
 		} catch (TrackedRecordException e) {
 			threw = true;
 		}
@@ -622,7 +631,9 @@ private class TrackedRecord_Test {
 	}
 
 	/**
-	 * @description Verifies getOriginal() throws when the field argument is null.
+	 * @description Verifies getOriginal() throws when the field argument is
+	 * null. The cast disambiguates the SObjectField overload from the String
+	 * overload introduced in 0.1.1.
 	 */
 	@IsTest
 	static void shouldThrowWhenGetOriginalReceivesNullField() {
@@ -631,12 +642,203 @@ private class TrackedRecord_Test {
 		Boolean threw = false;
 		// Act
 		try {
-			tracked.getOriginal(null);
+			tracked.getOriginal((SObjectField) null);
 		} catch (TrackedRecordException e) {
 			threw = true;
 		}
 		// Assert
 		Assert.isTrue(threw, 'getOriginal(null) should throw TrackedRecordException');
+	}
+
+	/**
+	 * @description Verifies the default comparator treats String values with
+	 * different casing as unequal. Apex's == operator is case-insensitive on
+	 * Strings; the default comparator explicitly uses case-sensitive equality.
+	 */
+	@IsTest
+	static void shouldTreatStringsAsCaseSensitiveWhenDefaultComparatorCompares() {
+		Assert.isFalse(
+			DefaultFieldComparator.INSTANCE.areEqual('foo', 'FOO'),
+			'Default comparator should treat foo and FOO as unequal (case-sensitive)'
+		);
+		Assert.isTrue(DefaultFieldComparator.INSTANCE.areEqual('foo', 'foo'), 'Identical strings should be equal');
+	}
+
+	// ── String-name overload tests ─────────────────────────────────
+
+	/**
+	 * @description Verifies set(String, Object) delegates to the SObjectField
+	 * overload, tracking the field as dirty identically.
+	 */
+	@IsTest
+	static void shouldDelegateToSObjectFieldWhenSetReceivesStringName() {
+		// Arrange
+		TrackedRecord tracked = TrackedRecord.wrap(buildAccount(1, 'Acme'));
+		// Act
+		tracked.set('Industry', 'Technology');
+		// Assert
+		Assert.isTrue(tracked.isDirty(), 'String-name set should mark wrapper dirty');
+		Assert.isTrue(tracked.isFieldDirty(Account.Industry), 'String-name set should mark Industry dirty');
+		Assert.areEqual(
+			'Technology',
+			tracked.getChangedValue(Account.Industry),
+			'String-name set should record the same value as SObjectField overload'
+		);
+	}
+
+	/**
+	 * @description Verifies set(String, Object) throws TrackedRecordException
+	 * when the field name is blank.
+	 */
+	@IsTest
+	static void shouldThrowWhenSetReceivesBlankFieldName() {
+		// Arrange
+		TrackedRecord tracked = TrackedRecord.wrap(buildAccount(1, 'Acme'));
+		Boolean threw = false;
+		// Act
+		try {
+			tracked.set('', 'value');
+		} catch (TrackedRecordException e) {
+			threw = true;
+			Assert.isTrue(
+				e.getMessage().contains('fieldName must not be blank'),
+				'Failure message should explain that fieldName cannot be blank'
+			);
+		}
+		// Assert
+		Assert.isTrue(threw, 'set with blank field name should throw TrackedRecordException');
+	}
+
+	/**
+	 * @description Verifies set(String, Object) throws TrackedRecordException
+	 * when the field name does not exist on the wrapped SObject type, and
+	 * includes both the field name and SObject type in the error message.
+	 */
+	@IsTest
+	static void shouldThrowWhenSetReceivesUnknownFieldName() {
+		// Arrange
+		TrackedRecord tracked = TrackedRecord.wrap(buildAccount(1, 'Acme'));
+		Boolean threw = false;
+		// Act
+		try {
+			tracked.set('NotAField__c', 'value');
+		} catch (TrackedRecordException e) {
+			threw = true;
+			Assert.isTrue(
+				e.getMessage().contains('NotAField__c'),
+				'Failure message should include the missing field name'
+			);
+			Assert.isTrue(e.getMessage().contains('Account'), 'Failure message should include the SObject type');
+		}
+		// Assert
+		Assert.isTrue(threw, 'set with unknown field name should throw TrackedRecordException');
+	}
+
+	/**
+	 * @description Verifies setIfChanged(String, Object) delegates to the
+	 * SObjectField overload, skipping when the value matches the original.
+	 */
+	@IsTest
+	static void shouldDelegateToSObjectFieldWhenSetIfChangedReceivesStringName() {
+		// Arrange
+		Account acct = buildAccount(1, 'Acme');
+		acct.Industry = 'Technology';
+		TrackedRecord tracked = TrackedRecord.wrap(acct);
+		// Act
+		tracked.setIfChanged('Industry', 'Technology');
+		// Assert
+		Assert.isFalse(tracked.isDirty(), 'String-name setIfChanged should skip equal values');
+	}
+
+	/**
+	 * @description Verifies clear(String) delegates to the SObjectField
+	 * overload, removing the tracked change for the named field.
+	 */
+	@IsTest
+	static void shouldDelegateToSObjectFieldWhenClearReceivesStringName() {
+		// Arrange
+		TrackedRecord tracked = TrackedRecord.wrap(buildAccount(1, 'Acme'));
+		tracked.set(Account.Industry, 'Technology');
+		// Act
+		tracked.clear('Industry');
+		// Assert
+		Assert.isFalse(tracked.isFieldDirty(Account.Industry), 'String-name clear should remove the tracked change');
+	}
+
+	/**
+	 * @description Verifies getOriginal(String) delegates to the SObjectField
+	 * overload, returning the pre-change value.
+	 */
+	@IsTest
+	static void shouldDelegateToSObjectFieldWhenGetOriginalReceivesStringName() {
+		// Arrange
+		Account acct = buildAccount(1, 'Acme');
+		acct.Industry = 'Technology';
+		TrackedRecord tracked = TrackedRecord.wrap(acct);
+		tracked.set(Account.Industry, 'Healthcare');
+		// Act
+		Object originalValue = tracked.getOriginal('Industry');
+		// Assert
+		Assert.areEqual('Technology', originalValue, 'String-name getOriginal should return the pre-change value');
+	}
+
+	/**
+	 * @description Verifies getChangedValue(String) delegates to the
+	 * SObjectField overload, returning the tracked new value.
+	 */
+	@IsTest
+	static void shouldDelegateToSObjectFieldWhenGetChangedValueReceivesStringName() {
+		// Arrange
+		TrackedRecord tracked = TrackedRecord.wrap(buildAccount(1, 'Acme'));
+		tracked.set(Account.Industry, 'Healthcare');
+		// Act
+		Object changedValue = tracked.getChangedValue('Industry');
+		// Assert
+		Assert.areEqual('Healthcare', changedValue, 'String-name getChangedValue should return the tracked new value');
+	}
+
+	/**
+	 * @description Verifies isFieldDirty(String) delegates to the SObjectField
+	 * overload, reporting dirty state for the named field.
+	 */
+	@IsTest
+	static void shouldDelegateToSObjectFieldWhenIsFieldDirtyReceivesStringName() {
+		// Arrange
+		TrackedRecord tracked = TrackedRecord.wrap(buildAccount(1, 'Acme'));
+		tracked.set(Account.Industry, 'Technology');
+		// Act / Assert
+		Assert.isTrue(tracked.isFieldDirty('Industry'), 'String-name isFieldDirty should detect tracked change');
+		Assert.isFalse(
+			tracked.isFieldDirty('NumberOfEmployees'),
+			'String-name isFieldDirty should return false for untracked field'
+		);
+	}
+
+	/**
+	 * @description Verifies repeated String-name calls succeed across multiple
+	 * fields and records, exercising the per-SObjectType describe cache. Cache
+	 * hits cannot be observed directly, but a fast pass with many String-name
+	 * operations confirms the cache produces consistent results.
+	 */
+	@IsTest
+	static void shouldResolveStringNamesConsistentlyAcrossMultipleCalls() {
+		// Arrange
+		List<TrackedRecord> tracked = TrackedRecord.wrapAll(
+			new List<SObject>{ buildAccount(1, 'First'), buildAccount(2, 'Second'), buildAccount(3, 'Third') }
+		);
+		// Act - many String-name calls across multiple records and fields
+		for (TrackedRecord trackedRecord : tracked) {
+			trackedRecord.set('Industry', 'Technology');
+			trackedRecord.set('NumberOfEmployees', 100);
+			trackedRecord.set('Description', 'Test');
+		}
+		// Assert - every record has all three fields tracked correctly
+		for (TrackedRecord trackedRecord : tracked) {
+			Assert.isTrue(trackedRecord.isFieldDirty('Industry'), 'Industry should be dirty');
+			Assert.isTrue(trackedRecord.isFieldDirty('NumberOfEmployees'), 'NumberOfEmployees should be dirty');
+			Assert.isTrue(trackedRecord.isFieldDirty('Description'), 'Description should be dirty');
+			Assert.areEqual('Technology', trackedRecord.getChangedValue('Industry'), 'Industry value should match');
+		}
 	}
 
 	// ── Test helpers ──────────────────────────────────────────────
@@ -664,25 +866,5 @@ private class TrackedRecord_Test {
 	 */
 	private static Account buildAccount(Integer counter, String name) {
 		return new Account(Id = fakeId(Account.SObjectType, counter), Name = name);
-	}
-
-	/**
-	 * @description Test-only IFieldComparator that compares strings without
-	 * regard to case, used to verify withComparator() integration.
-	 */
-	private class CaseInsensitiveComparator implements IFieldComparator {
-		/**
-		 * @description Compares two values, treating String values as equal
-		 * when they match case-insensitively. Falls back to default for non-Strings.
-		 * @param a First value.
-		 * @param b Second value.
-		 * @return True if values are equal under case-insensitive String rules.
-		 */
-		public Boolean areEqual(Object a, Object b) {
-			if (a instanceof String && b instanceof String) {
-				return ((String) a).equalsIgnoreCase((String) b);
-			}
-			return DefaultFieldComparator.INSTANCE.areEqual(a, b);
-		}
 	}
 }

@@ -131,6 +131,30 @@ if (!toUpdate.isEmpty()) {
 }
 ```
 
+### Dynamic field updates with String names
+
+Every field-accepting method also accepts a field API name as a `String`. Use this when field selection is driven by configuration, custom metadata, or external mappings rather than known at compile time:
+
+```apex
+// Field names from a config or external mapping
+Map<String, Object> incomingFields = new Map<String, Object>{
+    'Industry' => 'Healthcare',
+    'Phone' => '555-0100',
+    'Website' => 'https://example.com'
+};
+
+TrackedRecord tracked = TrackedRecord.wrap(existing);
+for (String fieldName : incomingFields.keySet()) {
+    tracked.setIfChanged(fieldName, incomingFields.get(fieldName));
+}
+
+if (tracked.isDirty()) {
+    update tracked.toDmlRecord();
+}
+```
+
+Both forms behave identically. Use `SObjectField` tokens when the field is known at compile time for type safety; use String names for runtime-driven scenarios.
+
 ### Integration with a Unit of Work
 
 `TrackedRecord` is UoW-agnostic — pass `toDmlRecord()` output to any UoW that accepts SObjects.
@@ -168,26 +192,28 @@ TrackedRecord tracked = TrackedRecord.wrap(existing).withComparator(new DomainAw
 
 ## API Reference
 
-| Method                              | Description                                                |
-| ----------------------------------- | ---------------------------------------------------------- |
-| `wrap(SObject)`                     | Wraps a record. Throws if record is null or has a null Id. |
-| `wrapAll(List<SObject>)`            | Wraps a list of records.                                   |
-| `set(field, value)`                 | Tracks a field as dirty (always).                          |
-| `setIfChanged(field, value)`        | Tracks only if value differs from original.                |
-| `clear(field)`                      | Removes a tracked change for a field.                      |
-| `reset()`                           | Removes all tracked changes.                               |
-| `getRecord()`                       | Returns the original wrapped SObject.                      |
-| `getOriginal(field)`                | Returns the pre-change value of a field.                   |
-| `isDirty()`                         | True if any field is tracked as changed.                   |
-| `isFieldDirty(field)`               | True if the given field is tracked as changed.             |
-| `getDirtyFields()`                  | Set of dirty fields (defensive copy).                      |
-| `getDirtyFieldList()`               | List of dirty fields (for fflib integration).              |
-| `getChangedValues()`                | Map of dirty field → new value (defensive copy).           |
-| `toDmlRecord()`                     | SObject with Id + dirty fields only.                       |
-| `toDmlRecords(List<TrackedRecord>)` | Static. List of DML records, filtered to dirty only.       |
-| `withComparator(IFieldComparator)`  | Customize equality for `setIfChanged()`.                   |
+Methods that accept a field can be called with either an `SObjectField` token or a field API name as a `String`. Both forms are listed below where applicable.
 
-```
+| Method                              | Description                                                                                                     |
+| ----------------------------------- | --------------------------------------------------------------------------------------------------------------- |
+| `wrap(SObject)`                     | Wraps a record. Throws if record is null or has a null Id.                                                      |
+| `wrapAll(List<SObject>)`            | Wraps a list of records.                                                                                        |
+| `set(field, value)`                 | Tracks a field as dirty (always). Accepts `SObjectField` or `String` field name.                                |
+| `setIfChanged(field, value)`        | Tracks only if value differs from original. Accepts `SObjectField` or `String` field name.                      |
+| `clear(field)`                      | Removes a tracked change for a field. Accepts `SObjectField` or `String` field name.                            |
+| `reset()`                           | Removes all tracked changes.                                                                                    |
+| `getRecord()`                       | Returns the original wrapped SObject.                                                                           |
+| `getOriginal(field)`                | Returns the pre-change value of a field. Accepts `SObjectField` or `String` field name.                         |
+| `getChangedValue(field)`            | Returns the tracked new value for a field, or null if not dirty. Accepts `SObjectField` or `String` field name. |
+| `isDirty()`                         | True if any field is tracked as changed.                                                                        |
+| `isFieldDirty(field)`               | True if the given field is tracked as changed. Accepts `SObjectField` or `String` field name.                   |
+| `getDirtyFields()`                  | Set of dirty fields (defensive copy).                                                                           |
+| `getDirtyFieldList()`               | List of dirty fields (for fflib integration).                                                                   |
+| `getChangedValues()`                | Map of dirty field → new value (defensive copy).                                                                |
+| `toDmlRecord()`                     | SObject with Id + dirty fields only.                                                                            |
+| `toDmlRecords(List<TrackedRecord>)` | Static. List of DML records, filtered to dirty only.                                                            |
+| `withComparator(IFieldComparator)`  | Customize equality for `setIfChanged()`.                                                                        |
+
 See the [Getting Started guide](docs/getting-started.md) for a hands-on walkthrough,
 and the [examples](docs/examples/) for real-world patterns.
 
@@ -229,7 +255,3 @@ MIT — see [LICENSE](LICENSE) for the full text.
 ## Author
 
 Created and maintained by [Andrew J La Russa](https://github.com/alarussaj).
-
- 
- 
-```

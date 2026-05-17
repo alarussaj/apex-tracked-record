@@ -15,6 +15,22 @@ public inherited sharing class TrackedRecord {
 	private IFieldComparator comparator = DefaultFieldComparator.INSTANCE;
 
 	/**
+	 * Per-SObjectType field-name map cache. Statics reset between transactions,
+	 * so this is transaction-scoped. Keyed by SObjectType so wrapping records
+	 * of different types in the same transaction each pay the describe cost
+	 * only once.
+	 */
+	private static Map<SObjectType, Map<String, SObjectField>> fieldsByType {
+		get {
+			if (fieldsByType == null) {
+				fieldsByType = new Map<SObjectType, Map<String, SObjectField>>();
+			}
+			return fieldsByType;
+		}
+		set;
+	}
+
+	/**
 	 * @description Wraps a single existing record for change tracking.
 	 * @param record A queried SObject. Must not be null and must have a non-null Id.
 	 * @return A new TrackedRecord wrapping the supplied record.
@@ -76,6 +92,18 @@ public inherited sharing class TrackedRecord {
 	}
 
 	/**
+	 * @description Tracks a field as changed by API name. Always records the
+	 * change regardless of whether the new value equals the current value.
+	 * @param fieldName API name of the field to mark as changed.
+	 * @param value New value for the field. May be null.
+	 * @return This TrackedRecord, for chaining.
+	 * @throws TrackedRecordException if fieldName is blank or does not exist.
+	 */
+	public TrackedRecord set(String fieldName, Object value) {
+		return set(resolveField(fieldName), value);
+	}
+
+	/**
 	 * @description Tracks a field as changed only if the new value differs
 	 * from the original (pre-change) value. Comparison is delegated to the
 	 * configured IFieldComparator.
@@ -94,6 +122,18 @@ public inherited sharing class TrackedRecord {
 	}
 
 	/**
+	 * @description Tracks a field as changed by API name only if the new value
+	 * differs from the original (pre-change) value.
+	 * @param fieldName API name of the field to evaluate.
+	 * @param value Proposed new value.
+	 * @return This TrackedRecord, for chaining.
+	 * @throws TrackedRecordException if fieldName is blank or does not exist.
+	 */
+	public TrackedRecord setIfChanged(String fieldName, Object value) {
+		return setIfChanged(resolveField(fieldName), value);
+	}
+
+	/**
 	 * @description Removes a previously-tracked change for a single field.
 	 * No-op if the field was not dirty.
 	 * @param field SObjectField to clear from the change set.
@@ -104,6 +144,17 @@ public inherited sharing class TrackedRecord {
 		validateField(field);
 		changes.remove(field);
 		return this;
+	}
+
+	/**
+	 * @description Removes a previously-tracked change for a single field by
+	 * API name. No-op if the field was not dirty.
+	 * @param fieldName API name of the field to clear from the change set.
+	 * @return This TrackedRecord, for chaining.
+	 * @throws TrackedRecordException if fieldName is blank or does not exist.
+	 */
+	public TrackedRecord clear(String fieldName) {
+		return clear(resolveField(fieldName));
 	}
 
 	/**
@@ -138,6 +189,17 @@ public inherited sharing class TrackedRecord {
 	}
 
 	/**
+	 * @description Returns the original (pre-change) value of a single field by
+	 * API name, regardless of any tracked changes.
+	 * @param fieldName API name of the field whose original value is requested.
+	 * @return The value as it appears on the original record.
+	 * @throws TrackedRecordException if fieldName is blank or does not exist.
+	 */
+	public Object getOriginal(String fieldName) {
+		return getOriginal(resolveField(fieldName));
+	}
+
+	/**
 	 * @description Returns the tracked new value for a single field, or null
 	 * if the field has not been changed. Provides typed access to individual
 	 * tracked values without forcing consumers to chain through the full map
@@ -149,6 +211,17 @@ public inherited sharing class TrackedRecord {
 	public Object getChangedValue(SObjectField field) {
 		validateField(field);
 		return changes.get(field);
+	}
+
+	/**
+	 * @description Returns the tracked new value for a single field by API name,
+	 * or null if the field has not been changed.
+	 * @param fieldName API name of the field whose tracked value is requested.
+	 * @return The tracked new value for the field, or null if not dirty.
+	 * @throws TrackedRecordException if fieldName is blank or does not exist.
+	 */
+	public Object getChangedValue(String fieldName) {
+		return getChangedValue(resolveField(fieldName));
 	}
 
 	/**
@@ -168,6 +241,17 @@ public inherited sharing class TrackedRecord {
 	public Boolean isFieldDirty(SObjectField field) {
 		validateField(field);
 		return changes.containsKey(field);
+	}
+
+	/**
+	 * @description Returns true if the specified field API name has been tracked
+	 * as changed.
+	 * @param fieldName API name of the field to check.
+	 * @return True when the field is currently dirty.
+	 * @throws TrackedRecordException if fieldName is blank or does not exist.
+	 */
+	public Boolean isFieldDirty(String fieldName) {
+		return isFieldDirty(resolveField(fieldName));
 	}
 
 	/**
@@ -242,6 +326,32 @@ public inherited sharing class TrackedRecord {
 	public TrackedRecord withComparator(IFieldComparator comparator) {
 		this.comparator = (comparator == null) ? DefaultFieldComparator.INSTANCE : comparator;
 		return this;
+	}
+
+	/**
+	 * @description Resolves a field API name to an SObjectField token for the
+	 * wrapped record type. Field-name maps are cached per SObjectType for the
+	 * lifetime of the transaction, so multiple String-name calls on records
+	 * of the same type pay the describe cost only once.
+	 * @param fieldName API name of the field to resolve.
+	 * @return Matching SObjectField token.
+	 * @throws TrackedRecordException if fieldName is blank or does not exist.
+	 */
+	private SObjectField resolveField(String fieldName) {
+		if (String.isBlank(fieldName)) {
+			throw new TrackedRecordException('fieldName must not be blank.');
+		}
+		SObjectType sobjectType = original.getSObjectType();
+		if (!fieldsByType.containsKey(sobjectType)) {
+			fieldsByType.put(sobjectType, sobjectType.getDescribe().fields.getMap());
+		}
+		SObjectField field = fieldsByType.get(sobjectType).get(fieldName);
+		if (field == null) {
+			throw new TrackedRecordException(
+				'Field ' + fieldName + ' does not exist on ' + String.valueOf(sobjectType) + '.'
+			);
+		}
+		return field;
 	}
 
 	/**

@@ -36,16 +36,16 @@ public inherited sharing class BulkUpdateExample {
 
 		// Apply per-record logic — different rules for different records
 		for (TrackedRecord trackedRecord : tracked) {
-			Account account = (Account) trackedRecord.getRecord();
+			Account acct = (Account) trackedRecord.getRecord();
 
 			// Rule 1: Set the segment marker based on size
-			if (account.NumberOfEmployees != null) {
-				String segment = computeSegment(account.NumberOfEmployees);
+			if (acct.NumberOfEmployees != null) {
+				String segment = computeSegment(acct.NumberOfEmployees);
 				trackedRecord.setIfChanged(Account.Description, segment);
 			}
 
 			// Rule 2: Default Industry if missing
-			if (account.Industry == null) {
+			if (acct.Industry == null) {
 				trackedRecord.set(Account.Industry, 'Unspecified');
 			}
 		}

@@ -22,7 +22,7 @@ public inherited sharing class SingleRecordUpdateExample {
 	 */
 	public static void updateIndustry(Id accountId, String newIndustry) {
 		// Query only the fields we need to read (plus Id, always required for updates)
-		Account account = [
+		Account acct = [
 			SELECT Id, Industry
 			FROM Account
 			WHERE Id = :accountId
@@ -30,7 +30,7 @@ public inherited sharing class SingleRecordUpdateExample {
 		];
 
 		// Wrap the queried record
-		TrackedRecord tracked = TrackedRecord.wrap(account);
+		TrackedRecord tracked = TrackedRecord.wrap(acct);
 
 		// Use setIfChanged to skip the update entirely if the value hasn't changed.
 		// This avoids unnecessary DML, trigger runs, and audit-trail churn.
@@ -50,14 +50,14 @@ public inherited sharing class SingleRecordUpdateExample {
 	 * @param newEmployeeCount The new employee count.
 	 */
 	public static void updateAccountSummary(Id accountId, String newIndustry, Integer newEmployeeCount) {
-		Account account = [
+		Account acct = [
 			SELECT Id, Industry, NumberOfEmployees
 			FROM Account
 			WHERE Id = :accountId
 			LIMIT 1
 		];
 
-		TrackedRecord tracked = TrackedRecord.wrap(account)
+		TrackedRecord tracked = TrackedRecord.wrap(acct)
 			.setIfChanged(Account.Industry, newIndustry)
 			.setIfChanged(Account.NumberOfEmployees, newEmployeeCount);
 

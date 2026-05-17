@@ -62,6 +62,17 @@ tracked.set(Account.Industry, 'Healthcare')
        .set(Account.NumberOfEmployees, 250);
 ```
 
+### Using field API names instead of tokens
+
+Every field-accepting method also accepts the field's API name as a `String`:
+
+```apex
+tracked.set('Industry', 'Healthcare');
+tracked.set('NumberOfEmployees', 250);
+```
+
+Both forms behave identically. Use `SObjectField` tokens when the field is known at compile time for type safety; use String names for dynamic scenarios where the field is determined at runtime (config-driven sync, JSON deserialization, etc.). See [IdempotentSyncExample.cls](examples/IdempotentSyncExample.cls) for a worked example.
+
 ## Step 3: Check what changed
 
 Before committing the update, inspect what the wrapper sees as dirty:
@@ -158,11 +169,14 @@ Yes. `toDmlRecord()` returns a plain `SObject`, which works with `update`, `Data
 **Does it work with fflib's Unit of Work?**
 Yes. See [UnitOfWorkIntegrationExample.cls](examples/UnitOfWorkIntegrationExample.cls) for a worked example using `getDirtyFieldList()`.
 
+**Can I use field API names instead of `SObjectField` tokens?**
+Yes. Every field-accepting method has both an `SObjectField`-typed overload and a `String`-typed overload that accepts the field's API name. The String overloads are most useful for dynamic scenarios where the field set is determined by configuration, custom metadata, or external data rather than known at compile time. See [IdempotentSyncExample.cls](examples/IdempotentSyncExample.cls) for a dynamic-mapping example.
+
 **Can I track inserts?**
 No. TrackedRecord is update-only by design — for inserts, plain SObject construction (`new Account(Name = '...')`) is the right answer because every field is intentional. TrackedRecord adds value only when you have an existing record and want to narrow the update scope.
 
 **Is there a runtime overhead?**
-Negligible. The wrapper is a thin object holding a reference to your SObject and a small Map of changed fields. No reflection, no describe calls, no SOQL.
+Negligible. The wrapper is a thin object holding a reference to your SObject and a small Map of changed fields. No reflection, no SOQL. When you use String field names, the SObject describe is cached per type for the lifetime of the transaction, so repeated lookups are cheap.
 
 **Can I customize equality comparison?**
 Yes. Implement `IFieldComparator` and pass it to `withComparator()`. Useful for case-insensitive String comparison, treating empty strings as null, or any other domain-specific equality rule.
