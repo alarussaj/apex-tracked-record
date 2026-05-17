@@ -46,13 +46,13 @@ public inherited sharing class UnitOfWorkIntegrationExample {
 
 		List<TrackedRecord> tracked = TrackedRecord.wrapAll(accounts);
 		for (TrackedRecord trackedRecord : tracked) {
-			Account account = (Account) trackedRecord.getRecord();
+			Account acct = (Account) trackedRecord.getRecord();
 
 			// Only flag for industry change if it differs
 			trackedRecord.setIfChanged(Account.Industry, newIndustry);
 
 			// Conditional change based on size
-			if (account.NumberOfEmployees != null && account.NumberOfEmployees >= 100) {
+			if (acct.NumberOfEmployees != null && acct.NumberOfEmployees >= 100) {
 				trackedRecord.set(Account.Description, 'Mid-Market or larger');
 			}
 

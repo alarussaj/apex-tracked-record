@@ -34,7 +34,10 @@ public inherited sharing class IdempotentSyncExample {
 	}
 
 	/**
-	 * Syncs incoming external data to existing Salesforce Accounts.
+	 * Syncs incoming external data to existing Salesforce Accounts using
+	 * SObjectField tokens. Use this pattern when the field set is known
+	 * at compile time.
+	 *
 	 * Only records whose values actually differ from the external data
 	 * are updated.
 	 *
@@ -57,8 +60,8 @@ public inherited sharing class IdempotentSyncExample {
 		// Wrap each one and apply setIfChanged for each external field
 		List<TrackedRecord> tracked = TrackedRecord.wrapAll(existing);
 		for (TrackedRecord trackedRecord : tracked) {
-			Account account = (Account) trackedRecord.getRecord();
-			ExternalAccountData data = incomingById.get(account.Id);
+			Account acct = (Account) trackedRecord.getRecord();
+			ExternalAccountData data = incomingById.get(acct.Id);
 
 			trackedRecord
 				.setIfChanged(Account.Industry, data.industry)
@@ -77,6 +80,59 @@ public inherited sharing class IdempotentSyncExample {
 		// Telemetry: log how many records were actually updated vs. skipped
 		System.debug(
 			'Sync complete: ' + toUpdate.size() + ' updated, ' + (existing.size() - toUpdate.size()) + ' unchanged'
+		);
+	}
+
+	/**
+	 * Syncs incoming external data using a dynamic field-to-value mapping.
+	 * Use this pattern when the field set is determined at runtime — for
+	 * example, when the integration is driven by Custom Metadata, the
+	 * incoming payload is a generic JSON object, or different record
+	 * subtypes carry different fields.
+	 *
+	 * The String overloads of set / setIfChanged accept the field API name
+	 * directly, so the caller doesn't need to convert names to SObjectField
+	 * tokens. Field describes are cached per SObjectType for the lifetime
+	 * of the transaction, so this scales cheaply across many fields and
+	 * records.
+	 *
+	 * @param incomingByRecordId Map of Account Id to a field-name → value map for that record.
+	 */
+	public static void syncFromFieldMapping(Map<Id, Map<String, Object>> incomingByRecordId) {
+		// Query the records to be updated. In production, you'd query only the
+		// columns you'll actually reference; for a generic example we keep this simple.
+		List<Account> existing = [
+			SELECT Id, Industry, Phone, Website, NumberOfEmployees
+			FROM Account
+			WHERE Id IN :incomingByRecordId.keySet()
+		];
+
+		List<TrackedRecord> tracked = TrackedRecord.wrapAll(existing);
+		for (TrackedRecord trackedRecord : tracked) {
+			Account acct = (Account) trackedRecord.getRecord();
+			Map<String, Object> incomingFields = incomingByRecordId.get(acct.Id);
+			if (incomingFields == null) {
+				continue;
+			}
+
+			// Apply each incoming field by name; setIfChanged keeps the sync idempotent
+			for (String fieldName : incomingFields.keySet()) {
+				trackedRecord.setIfChanged(fieldName, incomingFields.get(fieldName));
+			}
+		}
+
+		List<SObject> toUpdate = TrackedRecord.toDmlRecords(tracked);
+
+		if (!toUpdate.isEmpty()) {
+			Database.update(toUpdate, false, AccessLevel.USER_MODE);
+		}
+
+		System.debug(
+			'Dynamic sync complete: ' +
+				toUpdate.size() +
+				' updated, ' +
+				(existing.size() - toUpdate.size()) +
+				' unchanged'
 		);
 	}
 }
