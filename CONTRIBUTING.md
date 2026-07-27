@@ -34,7 +34,7 @@ sf org create scratch --definition-file config/project-scratch-def.json --alias 
 sf project deploy start --source-dir force-app --target-org atr-scratch
 
 # Run the tests
-sf apex run test --target-org atr-scratch --tests TrackedRecord_Test --code-coverage --result-format human --wait 10
+sf apex run test --target-org atr-scratch --test-level RunLocalTests --code-coverage --result-format human --wait 10
 ```
 
 ### Formatting
