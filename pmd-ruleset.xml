@@ -15,7 +15,7 @@
 
     <rule
         ref="category/apex/bestpractices.xml/ApexUnitTestClassShouldHaveAsserts"
-        message="Apex unit test classes should have at least one System.assert() or Assert method call"
+        message="Apex unit test classes should have at least one assertion call (System.assert*, Assert.*, Asserts.*, verify*.*)"
     >
         <priority>3</priority>
         <properties>
