@@ -1,12 +1,17 @@
 apex:
   - changed-files:
-      - any-glob-to-any-file: 'force-app/**'
+      - any-glob-to-any-file: 'force-app/**/*.cls'
+      - any-glob-to-any-file: 'force-app/**/*.cls-meta.xml'
+
+tests:
+  - changed-files:
+      - any-glob-to-any-file: 'force-app/**/*_Test.cls'
 
 ci:
   - changed-files:
       - any-glob-to-any-file: '.github/workflows/**'
       - any-glob-to-any-file: '.github/dependabot.yml'
-      - any-glob-to-any-file: 'ruleset.xml'
+      - any-glob-to-any-file: 'pmd-ruleset.xml'
       - any-glob-to-any-file: 'codecov.yml'
 
 documentation:
@@ -24,7 +29,3 @@ config:
       - any-glob-to-any-file: '.prettierrc'
       - any-glob-to-any-file: '.gitignore'
       - any-glob-to-any-file: '.forceignore'
-
-tests:
-  - changed-files:
-      - any-glob-to-any-file: 'force-app/main/default/classes/*_Test.cls'

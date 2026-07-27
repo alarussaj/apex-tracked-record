@@ -12,6 +12,7 @@ jobs:
   release:
     name: Create unlocked package version & GitHub release
     runs-on: ubuntu-latest
+
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -24,7 +25,9 @@ jobs:
           node-version: '20'
 
       - name: Install Salesforce CLI
-        run: npm install -g @salesforce/cli@latest
+        run: |
+          npm install --global @salesforce/cli@latest
+          sf --version
 
       - name: Authenticate to Dev Hub
         env:
@@ -38,38 +41,33 @@ jobs:
           fi
           printf '%s' "$SF_DEVHUB_AUTH_URL" > /tmp/devhub-auth.txt
           sf org login sfdx-url --sfdx-url-file /tmp/devhub-auth.txt --alias DevHub --set-default-dev-hub
-          rm /tmp/devhub-auth.txt
+          rm -f /tmp/devhub-auth.txt
 
       - name: Extract version from tag
         id: version
         run: |
-          # Strip the leading 'v' from the tag (v0.1.0 -> 0.1.0)
           VERSION="${GITHUB_REF#refs/tags/v}"
-          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
           echo "Releasing version: $VERSION"
 
       - name: Create package version
         id: package
         run: |
           set -eo pipefail
-
           echo "::group::Running sf package version create"
-
-          # Capture stdout and stderr separately
           if sf package version create \
-            --package apex-tracked-record \
+            --package "apex-tracked-record" \
             --installation-key-bypass \
             --wait 30 \
             --code-coverage \
+            --target-dev-hub DevHub \
             --json > /tmp/sf-stdout.json 2> /tmp/sf-stderr.log; then
             SF_EXIT_CODE=0
           else
             SF_EXIT_CODE=$?
           fi
-
           echo "::endgroup::"
 
-          # Always print captured output for diagnostics
           echo "::group::sf stdout"
           cat /tmp/sf-stdout.json
           echo "::endgroup::"
@@ -80,15 +78,11 @@ jobs:
             echo "::endgroup::"
           fi
 
-          # Fail if sf failed
           if [ "$SF_EXIT_CODE" -ne 0 ]; then
             echo "::error::sf package version create exited with code $SF_EXIT_CODE"
             exit "$SF_EXIT_CODE"
           fi
 
-          # Extract the package version Id. The raw stdout/stderr were already
-          # printed above for diagnostics, so we only need to surface jq's own
-          # error here if parsing fails.
           if PACKAGE_VERSION_ID=$(jq -r '.result.SubscriberPackageVersionId // empty' /tmp/sf-stdout.json 2>/tmp/jq-stderr.log); then
             if [ -z "$PACKAGE_VERSION_ID" ]; then
               echo "::error::sf succeeded but no SubscriberPackageVersionId in output"
@@ -100,14 +94,21 @@ jobs:
             exit 1
           fi
 
-          echo "package_version_id=$PACKAGE_VERSION_ID" >> $GITHUB_OUTPUT
+          echo "package_version_id=$PACKAGE_VERSION_ID" >> "$GITHUB_OUTPUT"
           echo "::notice::Package Version Id: $PACKAGE_VERSION_ID"
 
       - name: Promote package version
         run: |
           sf package version promote \
             --package "${{ steps.package.outputs.package_version_id }}" \
+            --target-dev-hub DevHub \
             --no-prompt
+
+      - name: Delete existing release for tag (prevents draft collision)
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh release delete "${{ github.ref_name }}" --yes --cleanup-tag=false 2>/dev/null || true
 
       - name: Generate release notes
         id: release_notes
@@ -146,7 +147,7 @@ jobs:
             ```bash
             sf package install --package ${{ steps.package.outputs.package_version_id }} --target-org <your-org-alias> --wait 10
             ```
-          draft: false
           prerelease: ${{ startsWith(steps.version.outputs.version, '0.') }}
+          draft: false
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

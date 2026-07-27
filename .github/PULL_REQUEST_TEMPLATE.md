@@ -1,22 +1,22 @@
 <!--
-  Thanks for contributing to apex-tracked-record!
-  Fill in the sections below to help reviewers.
+  Thanks for contributing! Fill in the sections below to help reviewers.
 -->
+
+## Description
+
+<!-- Briefly describe what this PR changes and why. -->
 
 ## Type of change
 
-<!-- Mark with [x] -->
+<!-- Check all that apply. Must match the Conventional Commits prefix in the PR title. -->
 
-- [ ] Bug fix (non-breaking change that fixes an issue)
-- [ ] New feature (non-breaking change that adds functionality)
-- [ ] Breaking change (fix or feature that would cause existing functionality to behave differently)
-- [ ] Documentation update
-- [ ] Refactor / internal change (no user-visible behavior change)
-- [ ] Test improvement
-
-## What changed
-
-<!-- Concise description of the change. -->
+- [ ] `feat` — new feature
+- [ ] `fix` — bug fix
+- [ ] `docs` — documentation only
+- [ ] `refactor` — code change that neither fixes a bug nor adds a feature
+- [ ] `test` — adding or correcting tests
+- [ ] `chore` — tooling, config, or maintenance
+- [ ] `ci` — CI/CD changes
 
 ## Why
 
@@ -26,20 +26,17 @@ Closes #
 
 ## Testing notes
 
-<!-- How did you verify the change? Did you add or update tests? -->
+<!-- How did you verify the change? -->
 
-- [ ] Apex tests pass locally
-- [ ] Coverage on changed lines is at least 90%
+- [ ] Apex tests pass locally (`sf apex run test`)
 - [ ] PMD passes locally
-- [ ] Prettier check passes locally
-
-## Breaking change details
-
-<!-- If this is a breaking change, describe what breaks and how consumers should migrate. Otherwise delete this section. -->
+- [ ] Prettier check passes locally (`npm run format:check`)
 
 ## Checklist
 
-- [ ] I've read the [Contributing Guide](../CONTRIBUTING.md)
-- [ ] I've updated `CHANGELOG.md` under `[Unreleased]` if this is user-visible
-- [ ] I've updated `README.md` if the public API or installation steps changed
-- [ ] My branch is up-to-date with `main`
+- [ ] My commit messages follow [Conventional Commits](https://www.conventionalcommits.org/en/v1.0.0/)
+- [ ] I have added or updated tests for my changes
+- [ ] I have updated relevant documentation (`docs/`, `README.md`)
+- [ ] I have updated `CHANGELOG.md` under `[Unreleased]` if this is a user-facing change
+- [ ] My code follows the project's coding standards (ApexDoc, `inherited sharing`, `@IsTest` casing, no Schema-namespace variable collisions, no blank lines inside method bodies)
+- [ ] My branch is up to date with `main`

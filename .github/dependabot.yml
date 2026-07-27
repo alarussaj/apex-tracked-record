@@ -1,20 +1,27 @@
 version: 2
 updates:
+  # Keep GitHub Actions up to date
   - package-ecosystem: 'github-actions'
     directory: '/'
     schedule:
       interval: 'weekly'
       day: 'monday'
     open-pull-requests-limit: 5
+    commit-message:
+      prefix: 'ci'
     labels:
       - 'dependencies'
       - 'ci'
 
+  # Keep npm tooling (Husky, lint-staged, Prettier) up to date
   - package-ecosystem: 'npm'
     directory: '/'
     schedule:
       interval: 'weekly'
       day: 'monday'
     open-pull-requests-limit: 5
+    commit-message:
+      prefix: 'chore'
     labels:
       - 'dependencies'
+      - 'npm'
