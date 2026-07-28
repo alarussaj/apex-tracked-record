@@ -18,11 +18,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 First successful release. Adds String-name overloads for all field-accepting methods, enabling dynamic field updates from external data sources, custom metadata, or any runtime-determined field selection.
 
 ### Added
+
 - String-name overloads for `set()`, `setIfChanged()`, `clear()`, `getOriginal()`, `getChangedValue()`, and `isFieldDirty()`. Each method now accepts either an `SObjectField` token or a field API name as a `String`.
 - Per-SObjectType describe cache so multiple String-name lookups on records of the same type pay the describe cost only once per transaction.
 - `IdempotentSyncExample.syncFromFieldMapping()` demonstrating dynamic field updates via the String-name overloads.
 
 ### Fixed
+
 - Package compilation via `sf package version create` now succeeds. The previous v0.1.0 release attempt failed validation due to an Apex package compiler type-inference issue that misread `SObjectField` references in test contexts; the new String-name overloads resolve the ambiguity.
 - `DefaultFieldComparator` now uses case-sensitive String equality (via `String.equals()`) instead of Apex's case-insensitive `==` operator. Strings like `'foo'` and `'FOO'` are now correctly treated as different, matching most users' expectations. Previously the case-insensitive behavior was silent and could cause `setIfChanged()` to skip changes that consumers expected to be tracked.
 

@@ -1,6 +1,6 @@
 # Contributing
 
-Thanks for considering a contribution to **apex-tracked-record**.
+Thanks for considering a contribution to **apex-tracked-record**. This document describes how to set up your local environment, the standards the codebase follows, and the process for submitting changes.
 
 ## Development setup
 
@@ -17,7 +17,7 @@ You'll need:
 git clone https://github.com/alarussaj/apex-tracked-record.git
 cd apex-tracked-record
 
-# Install Node dependencies (Prettier, plugins)
+# Install Node dependencies (Prettier, Husky, lint-staged)
 npm install
 
 # Authorize your Dev Hub
@@ -31,10 +31,10 @@ sf org login web --set-default-dev-hub --alias DevHub
 sf org create scratch --definition-file config/project-scratch-def.json --alias atr-scratch --set-default --duration-days 7
 
 # Deploy the source
-sf project deploy start --target-org atr-scratch
+sf project deploy start --source-dir force-app --target-org atr-scratch
 
 # Run the tests
-sf apex run test --target-org atr-scratch --code-coverage --result-format human --wait 10
+sf apex run test --target-org atr-scratch --test-level RunLocalTests --code-coverage --result-format human --wait 10
 ```
 
 ### Formatting
@@ -53,47 +53,56 @@ CI will reject pull requests with unformatted files. Run `npm run format` before
 
 ### Static analysis (PMD)
 
-The project uses a custom PMD ruleset (see `ruleset.xml`). PMD runs in CI on every pull request.
+The project uses a custom PMD ruleset (see `pmd-ruleset.xml`). PMD runs in CI on every pull request.
 
 To run PMD locally:
 
 ```bash
 # Download PMD if you haven't already (https://pmd.github.io/)
-pmd check -d force-app -R ruleset.xml -f text
+pmd check -d force-app -R pmd-ruleset.xml -f text
 ```
 
 ## Pull request process
 
-1. **Fork** the repo and create a feature branch from `main`:
-   ```bash
-   git checkout -b feature/short-description
-   ```
-2. **Make your changes** with tests covering new behavior.
-3. **Run formatting and tests** locally before pushing.
-4. **Open a pull request** against `main`. Fill in the PR template.
-5. **CI must pass** — scratch org deploy, all Apex tests, PMD, Prettier check, code coverage.
-6. **Wait for review.** I'll typically respond within a few days.
+1. **Open an issue first** for non-trivial changes. Discussion before code saves everyone time.
+2. **Fork** the repo and create a feature branch from `main`. Branch names follow `<type>/<short-description>`, where `<type>` matches Conventional Commits prefixes (`feat`, `fix`, `chore`, `docs`, `refactor`, `test`, `ci`, etc.).
+3. **Make your changes** with tests covering new behavior.
+4. **Run formatting and tests** locally before pushing.
+5. **Open a pull request** against `main`. Fill in the PR template. The PR title must follow [Conventional Commits](https://www.conventionalcommits.org/en/v1.0.0/) — it becomes the squash-commit message on `main`.
+6. **CI must pass** — PR title check, Prettier, PMD, scratch org deploy, and all Apex tests.
+7. **Wait for review.**
 
 ## Coding standards
 
-- **Visibility**: All public types use `public` (the library is source-distributed and not a managed package).
-- **Sharing**: Concrete classes that don't perform DML use `inherited sharing`. The library doesn't perform DML, so this is the default everywhere.
-- **ApexDoc**: Every public method has `@description`, `@param`, `@return`, and `@throws` tags as appropriate. Private methods that perform meaningful logic also have ApexDoc.
-- **Tests**: Use the `Assert` class (not `System.assert`). Every assertion has a descriptive message. Test methods follow `shouldDoThingWhenCondition` naming. Use the `// Arrange`, `// Act`, `// Assert` block comments where they aid readability.
+- **Visibility / sharing**: production classes use `inherited sharing` unless there's a specific reason not to.
+- **ApexDoc**: every public class and method has `@description`, `@param`, `@return`, and `@throws` tags as appropriate. Test methods are exempt from `@description`.
+- **Test annotations**: use `@IsTest` with capital I/T, not `@isTest`.
+- **Tests**: use the `Assert` class (not `System.assert`). Every assertion has a descriptive message. Test methods follow `shouldDoThingWhenCondition` naming. Use `// Arrange`, `// Act`, `// Assert` block comments where they aid readability.
+- **Variable naming**: avoid case-insensitive collisions with Schema namespace identifiers. Use `acct` instead of `account`, etc.
 - **No empty lines inside method bodies.** If a separation is meaningful, add a comment explaining why.
 
-## Reporting issues
+## Release process
 
-Please use the [issue templates](https://github.com/alarussaj/apex-tracked-record/issues/new/choose):
+Releases are tag-driven and automated by the `release` GitHub Action.
 
-- **Bug report** — for unexpected behavior.
-- **Feature request** — for new functionality.
+1. Ensure `main` is green and contains everything to be released.
+2. Update `CHANGELOG.md`: move items from `[Unreleased]` into a new version section.
+3. Bump the version in `sfdx-project.json` (`versionName` and `versionNumber`).
+4. Open a PR, merge it.
+5. Tag the merge commit and push:
 
-Include a minimal reproduction case for bugs. The smaller the better.
+   ```bash
+   git checkout main
+   git pull
+   git tag -a v0.x.y -m "Release v0.x.y"
+   git push origin v0.x.y
+   ```
+
+6. The release workflow creates the unlocked package version, promotes it, and publishes a GitHub release.
 
 ## Versioning
 
-This project uses [Semantic Versioning](https://semver.org/). Releases are tagged `vMAJOR.MINOR.PATCH`. PR labels (`bug`, `enhancement`, `breaking`) drive automatic release-notes drafting.
+This project uses [Semantic Versioning](https://semver.org/). Releases are tagged `vMAJOR.MINOR.PATCH`. Pre-1.0 releases (0.x.y) are considered unstable; minor versions may include breaking changes.
 
 ## Code of Conduct
 

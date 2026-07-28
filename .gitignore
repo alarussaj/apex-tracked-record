@@ -46,6 +46,11 @@ out/
 .env.local
 .env.*.local
 
+# ── Authentication and secrets — never commit ─────────────────
+**/.sfdx-auth-url*
+**/authFile.json
+**/*.key
+
 # ── PMD ───────────────────────────────────────────────────────
 pmd-output/
 pmd-report.*
