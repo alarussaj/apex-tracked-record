@@ -13,10 +13,14 @@
 - [ ] `feat` — new feature
 - [ ] `fix` — bug fix
 - [ ] `docs` — documentation only
+- [ ] `style` — formatting only (no code behavior change)
 - [ ] `refactor` — code change that neither fixes a bug nor adds a feature
+- [ ] `perf` — performance improvement
 - [ ] `test` — adding or correcting tests
-- [ ] `chore` — tooling, config, or maintenance
+- [ ] `build` — build system / dependencies
 - [ ] `ci` — CI/CD changes
+- [ ] `chore` — tooling, config, or maintenance
+- [ ] `revert` — revert a previous commit
 
 ## Why
 
