@@ -108,6 +108,12 @@ jobs:
             exit 1
           fi
           echo "$SF_JWT_KEY" > /tmp/server.key
+          echo "Key line count: $(wc -l < /tmp/server.key)"
+          echo "First line: $(head -1 /tmp/server.key)"
+          echo "Last line: $(tail -1 /tmp/server.key)"
+          echo "Consumer key length: ${#SF_CONSUMER_KEY}"
+          echo "Username: $SF_HUB_USERNAME"
+          openssl rsa -in /tmp/server.key -check -noout && echo "KEY IS VALID" || echo "KEY IS INVALID"
           sf org login jwt \
             --client-id "$SF_CONSUMER_KEY" \
             --jwt-key-file /tmp/server.key \
