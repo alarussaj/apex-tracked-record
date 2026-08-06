@@ -29,26 +29,19 @@ jobs:
           npm install --global @salesforce/cli@latest
           sf --version
 
-      - name: Authenticate Dev Hub (JWT)
-        shell: bash
+      - name: Authenticate to Dev Hub (auth URL)
         env:
-          SF_JWT_KEY: ${{ secrets.SF_JWT_KEY }}
-          SF_CONSUMER_KEY: ${{ secrets.SF_CONSUMER_KEY }}
-          SF_HUB_USERNAME: ${{ secrets.SF_HUB_USERNAME }}
+          SF_DEVHUB_AUTH_URL: ${{ secrets.SF_DEVHUB_AUTH_URL }}
+        shell: bash
         run: |
           set -e
-          if [ -z "$SF_JWT_KEY" ] || [ -z "$SF_CONSUMER_KEY" ] || [ -z "$SF_HUB_USERNAME" ]; then
-            echo "::error::JWT secrets missing. Need SF_JWT_KEY, SF_CONSUMER_KEY, SF_HUB_USERNAME. See JWT-SETUP.md."
+          if [ -z "$SF_DEVHUB_AUTH_URL" ]; then
+            echo "::error::SF_DEVHUB_AUTH_URL secret is not set. See CONTRIBUTING.md for setup."
             exit 1
           fi
-          echo "$SF_JWT_KEY" > /tmp/server.key
-          sf org login jwt \
-            --client-id "$SF_CONSUMER_KEY" \
-            --jwt-key-file /tmp/server.key \
-            --username "$SF_HUB_USERNAME" \
-            --set-default-dev-hub \
-            --alias DevHub
-          rm -f /tmp/server.key
+          printf '%s' "$SF_DEVHUB_AUTH_URL" > /tmp/devhub-auth.txt
+          sf org login sfdx-url --sfdx-url-file /tmp/devhub-auth.txt --alias DevHub --set-default-dev-hub
+          rm -f /tmp/devhub-auth.txt
 
       - name: Extract version from tag
         id: version
@@ -63,7 +56,7 @@ jobs:
           set -eo pipefail
           echo "::group::Running sf package version create"
           if sf package version create \
-            --package "apex-access-utils" \
+            --package "apex-tracked-record" \
             --installation-key-bypass \
             --wait 30 \
             --code-coverage \
